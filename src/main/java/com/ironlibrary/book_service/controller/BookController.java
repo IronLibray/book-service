@@ -1,6 +1,5 @@
 package com.ironlibrary.book_service.controller;
 
-
 import com.ironlibrary.book_service.model.Book;
 import com.ironlibrary.book_service.model.Category;
 import com.ironlibrary.book_service.service.BookService;
@@ -13,6 +12,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Controlador REST para operaciones de libros
+ * Endpoints base: /api/books
+ */
 @RestController
 @RequestMapping("/api/books")
 @RequiredArgsConstructor
@@ -118,6 +121,16 @@ public class BookController {
     @PatchMapping("/{id}/availability")
     public ResponseEntity<Void> updateAvailability(@PathVariable Long id, @RequestParam int copies) {
         log.info("Solicitud PATCH para actualizar disponibilidad del libro ID: {} con {} copias", id, copies);
+        bookService.updateAvailability(id, copies);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * PUT /api/books/{id}/availability?copies=-1 - Actualizar disponibilidad (para Feign)
+     */
+    @PutMapping("/{id}/availability")
+    public ResponseEntity<Void> updateAvailabilityPut(@PathVariable Long id, @RequestParam int copies) {
+        log.info("Solicitud PUT para actualizar disponibilidad del libro ID: {} con {} copias", id, copies);
         bookService.updateAvailability(id, copies);
         return ResponseEntity.ok().build();
     }
