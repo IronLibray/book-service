@@ -1,7 +1,10 @@
 package com.ironlibrary.book_service.service;
 
 
+import com.ironlibrary.book_service.exception.BookNotFoundException;
+import com.ironlibrary.book_service.exception.InsufficientCopiesException;
 import com.ironlibrary.book_service.model.Book;
+import com.ironlibrary.book_service.model.Category;
 import com.ironlibrary.book_service.repository.BookRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
