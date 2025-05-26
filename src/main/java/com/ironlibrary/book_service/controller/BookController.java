@@ -3,6 +3,7 @@ package com.ironlibrary.book_service.controller;
 
 import com.ironlibrary.book_service.model.Book;
 import com.ironlibrary.book_service.model.Category;
+import com.ironlibrary.book_service.service.BookService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
