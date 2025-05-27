@@ -31,9 +31,10 @@ public class Book {
     @Column(unique = true, nullable = false, length = 20)
     private String isbn;
 
+    // Cambio: usar @Enumerated con EnumType.STRING en lugar de usar columna enum nativa
     @Enumerated(EnumType.STRING)
     @NotNull(message = "La categoría es obligatoria")
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50) // Agregamos longitud para compatibilidad
     private Category category;
 
     @Min(value = 1, message = "Debe haber al menos 1 copia")

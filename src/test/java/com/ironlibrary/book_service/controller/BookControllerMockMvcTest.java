@@ -7,8 +7,7 @@ import com.ironlibrary.book_service.service.BookService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
@@ -27,23 +26,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Tests de integración para BookController usando MockMvc
- * Compatible con Spring Boot 3.4+ (sin @MockBean deprecated)
+ * Enfoque limpio con @TestConfiguration para Spring Boot 3.4+
  */
-@SpringBootTest
-@AutoConfigureWebMvc
+@WebMvcTest(BookController.class)
 @ActiveProfiles("test")
 class BookControllerMockMvcTest {
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private BookService bookService; // Este será el mock
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    private Book testBook;
 
     @TestConfiguration
     static class TestConfig {
@@ -54,9 +41,20 @@ class BookControllerMockMvcTest {
         }
     }
 
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private BookService bookService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private Book testBook;
+
     @BeforeEach
     void setUp() {
-        // Reset mock before each test
+        // Resetear el mock antes de cada test
         reset(bookService);
 
         testBook = new Book();
@@ -85,6 +83,8 @@ class BookControllerMockMvcTest {
                 .andExpect(jsonPath("$[0].author").value("Gabriel García Márquez"))
                 .andExpect(jsonPath("$[0].category").value("FICTION"))
                 .andExpect(jsonPath("$[0].availableCopies").value(3));
+
+        verify(bookService).findAllBooks();
     }
 
     @Test
@@ -98,6 +98,8 @@ class BookControllerMockMvcTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.title").value("Cien años de soledad"));
+
+        verify(bookService).findBookById(1L);
     }
 
     @Test
@@ -111,6 +113,56 @@ class BookControllerMockMvcTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$[0].availableCopies").value(3));
+
+        verify(bookService).findAvailableBooks();
+    }
+
+    @Test
+    void getBooksByCategory_ShouldReturnBooksOfCategory() throws Exception {
+        // Given
+        List<Book> books = Arrays.asList(testBook);
+        when(bookService.findByCategory(Category.FICTION)).thenReturn(books);
+
+        // When & Then
+        mockMvc.perform(get("/api/books/category")
+                        .param("category", "FICTION"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0].category").value("FICTION"));
+
+        verify(bookService).findByCategory(Category.FICTION);
+    }
+
+    @Test
+    void getBooksByAuthor_ShouldReturnBooksByAuthor() throws Exception {
+        // Given
+        List<Book> books = Arrays.asList(testBook);
+        when(bookService.findByAuthor("García")).thenReturn(books);
+
+        // When & Then
+        mockMvc.perform(get("/api/books/search/author")
+                        .param("author", "García"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0].author").value("Gabriel García Márquez"));
+
+        verify(bookService).findByAuthor("García");
+    }
+
+    @Test
+    void getBooksByTitle_ShouldReturnBooksByTitle() throws Exception {
+        // Given
+        List<Book> books = Arrays.asList(testBook);
+        when(bookService.findByTitle("Cien")).thenReturn(books);
+
+        // When & Then
+        mockMvc.perform(get("/api/books/search/title")
+                        .param("title", "Cien"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0].title").value("Cien años de soledad"));
+
+        verify(bookService).findByTitle("Cien");
     }
 
     @Test
@@ -123,6 +175,8 @@ class BookControllerMockMvcTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().string("true"));
+
+        verify(bookService).isBookAvailable(1L);
     }
 
     @Test
@@ -145,6 +199,32 @@ class BookControllerMockMvcTest {
                 .andExpect(status().isCreated())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.title").value("Cien años de soledad"));
+
+        verify(bookService).saveBook(any(Book.class));
+    }
+
+    @Test
+    void updateBook_ShouldReturnUpdatedBook() throws Exception {
+        // Given
+        Book updatedBook = new Book();
+        updatedBook.setTitle("Título actualizado");
+        updatedBook.setAuthor("Autor actualizado");
+        updatedBook.setIsbn("978-84-376-0495-8");
+        updatedBook.setCategory(Category.SCIENCE);
+        updatedBook.setTotalCopies(10);
+        updatedBook.setAvailableCopies(8);
+
+        when(bookService.updateBook(eq(1L), any(Book.class))).thenReturn(updatedBook);
+
+        // When & Then
+        mockMvc.perform(put("/api/books/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updatedBook)))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.title").value("Título actualizado"));
+
+        verify(bookService).updateBook(eq(1L), any(Book.class));
     }
 
     @Test
@@ -156,6 +236,21 @@ class BookControllerMockMvcTest {
         mockMvc.perform(patch("/api/books/1/availability")
                         .param("copies", "-1"))
                 .andExpect(status().isOk());
+
+        verify(bookService).updateAvailability(1L, -1);
+    }
+
+    @Test
+    void updateAvailabilityPut_ShouldReturnOk() throws Exception {
+        // Given
+        doNothing().when(bookService).updateAvailability(1L, 1);
+
+        // When & Then
+        mockMvc.perform(put("/api/books/1/availability")
+                        .param("copies", "1"))
+                .andExpect(status().isOk());
+
+        verify(bookService).updateAvailability(1L, 1);
     }
 
     @Test
@@ -166,6 +261,8 @@ class BookControllerMockMvcTest {
         // When & Then
         mockMvc.perform(delete("/api/books/1"))
                 .andExpect(status().isNoContent());
+
+        verify(bookService).deleteBook(1L);
     }
 
     @Test
