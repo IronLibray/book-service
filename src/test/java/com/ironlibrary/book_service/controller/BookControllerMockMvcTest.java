@@ -24,10 +24,6 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/**
- * Tests de integración para BookController usando MockMvc
- * Enfoque limpio con @TestConfiguration para Spring Boot 3.4+
- */
 @WebMvcTest(BookController.class)
 @ActiveProfiles("test")
 class BookControllerMockMvcTest {
